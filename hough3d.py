@@ -46,9 +46,7 @@ def draw_lines(line3,view3d):
 
                 frames.append(im)                      
             imageio.mimsave(outfilename, frames, 'GIF', duration=0.1) 
-
         else:
-            
             plt.show()
 
 def creat_toy_data(num_lines,num_points,draw,noise):
@@ -77,13 +75,11 @@ def sph2cart(az,el):
     cart=np.concatenate((cos_el*cos_az,cos_el*sin_az,sin_el),1)
     return cart
 
-    
 def shrink(p_prime, point_distance_threshold,num_point_threshold,merge_angle_point,cart):
     '''For the given set of points, if one point has less than 'num_point_threshold' number of points that are close to it, this point will be deleted 
     p_prime: given points
     point_distance_threshold: if the distance between two points is less than the threshold, that means two points are not close to each other
     merge_angle_point: is the function be used for merge both point and angles'''
-
     p_prime_list=[]
   
     sub_p_prime=p_prime[:,0].reshape(-1,1)
@@ -97,8 +93,6 @@ def shrink(p_prime, point_distance_threshold,num_point_threshold,merge_angle_poi
     
     co=np.sqrt(co0+co1+co2)<point_distance_threshold
     co_sum=np.sum(co,1)
-    
-        
     
     if merge_angle_point:
         return co[np.argmax(co_sum)]
@@ -122,8 +116,6 @@ def shrink(p_prime, point_distance_threshold,num_point_threshold,merge_angle_poi
                 p_prime_list.append(p_prime[co[co_index[i]]])
             return p_prime_list,co[np.argmax(co_sum)],num_prime
 
-
-
 def hough3(p,cart,num_point_threshold,point_distance_threshold,merge_angle_point):
     '''for a point in p, every possible line passing through this point is sampled
     each line correspond to a nearest point to the origin and a set of azimuth and elevation angles in the parameter space
@@ -136,7 +128,6 @@ def hough3(p,cart,num_point_threshold,point_distance_threshold,merge_angle_point
     angle_index_list: each point in acc correspond to an angle index wich directs to a set of angles in cart
     
     '''
-
     n=0
     angle_index_list=[]
     acc=[]
@@ -150,7 +141,6 @@ def hough3(p,cart,num_point_threshold,point_distance_threshold,merge_angle_point
             k=k.reshape(-1,1)
             p_prime=k*(B-p)+p #find the perpendicular foot coordinate
             
-            
             if len(cart)==1:
                 p=np.array(shrink(p_prime, point_distance_threshold,num_point_threshold,merge_angle_point,cart)[0])
                 center_point=np.array([np.average(x,0) for x in p ])
@@ -158,7 +148,6 @@ def hough3(p,cart,num_point_threshold,point_distance_threshold,merge_angle_point
                 return centers
             else:
                
-
                 p_prime=shrink(p_prime,point_distance_threshold,num_point_threshold,merge_angle_point,cart)
                 if p_prime==0:
 
@@ -184,16 +173,16 @@ def hough3(p,cart,num_point_threshold,point_distance_threshold,merge_angle_point
     center_angles=cart[angle_index_list]
     centers=np.concatenate((center_point,center_angles),1)
 
-
     return centers
-#%%
+
 def cluster_points(cen, line3D):
     distance=[]
     Q1S=[]
     Q2S=[]
     for i in range(len(cen)):
         Q1=cen[i,0:3].reshape(1,-1)#1*3
-        Q2=(centers[i,0:3]+cen[i,3:6]*10000).reshape(1,-1)#1*3
+        #Q2=(centers[i,0:3]+cen[i,3:6]*10000).reshape(1,-1)#1*3
+        Q2=(cen[i,0:3]+cen[i,3:6]*10000).reshape(1,-1)#1*3
         Q1S.append(Q1)
         Q2S.append(Q2)
         d=np.linalg.norm(np.cross(Q2-Q1,line3D-Q1),axis=1)/np.linalg.norm(Q2-Q1)
@@ -203,6 +192,7 @@ def cluster_points(cen, line3D):
     Q2S=np.squeeze(np.array(Q2S))
     index=np.argmin(distance,1)   
     return index,Q1S,Q2S
+
 def make_image(line3,k_centers,point_index,make_gif,name):
     fig = plt.figure()
     fig.set_size_inches(10.5, 10.5)
@@ -237,9 +227,7 @@ def make_image(line3,k_centers,point_index,make_gif,name):
             im = imageio.imread('movie'+str(i)+'.png')            
             
             frames.append(im)                      
-        imageio.mimsave(outfilename, frames, 'GIF',
-                        duration=0.1)
-#%%
+        imageio.mimsave(outfilename, frames, 'GIF', duration=0.1)
 
 N=540
 num_lines=10
@@ -251,7 +239,7 @@ print(noise)
 draw=1
 # sampling azimuth and elevatuon angles
 az = np.deg2rad(np.linspace(1,360,N))#azimuth
-el = np.deg2rad(np.linspace(1,180,N/2))#elevation
+el = np.deg2rad(np.linspace(1,180,int(N/2)))#elevation
 line3,a_list,b_list=creat_toy_data(num_lines,num_points,draw,noise)
 count_angle=np.array(list(itertools.product(az,el)))
 cart=sph2cart(count_angle[:,0],count_angle[:,1])
@@ -266,4 +254,4 @@ kmeans = KMeans(n_clusters=num_lines).fit(centers)
 k_centers=kmeans.cluster_centers_
 pred_line3=[]
 point_index,Q1S,Q2S=cluster_points(k_centers,line3)
-make_image(line3,k_centers,point_index,False,'C:/Users/Administrator/Desktop/result/7.png')
+make_image(line3,k_centers,point_index,False,'7.png')
